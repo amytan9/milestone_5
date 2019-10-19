@@ -1,0 +1,97 @@
+---
+title: "milestone_5"
+author: "Amy Tan"
+date: "10/18/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(foreign)
+library(haven)
+library(dplyr)
+library(tibble)
+library(tidyverse)
+```
+---
+About Page:
+---
+In this project, I used two datasets to figure out if there are any interesting correlations between economic variables and educational variables at the Census tract-level nationwide. How do students' broader social environments impact their academic achievement? I attempt to answer this question by getting the tract_covariates dataset from the Opportunity Insights website (https://opportunityinsights.org/data/) and the stanforddata dataset from the Stanford Education Data Archive (https://exhibits.stanford.edu/data/catalog/db586ns4974). The tract_covariates dataset describes economic and social factors of each Census tract, such as rates of intergenerational mobility and umemployment rates. The stanforddata dataset describes various academic variables for 3rd-8th graders across the nation by tract as well. It contains variables for academic achievement and student demographics. I merged these two datasets together by their FIPS code. I also descriptively analyzed each dataset to find trends within the datasets themselves, such as the correlation between race and income in the tract_covariates dataset. 
+
+Progress on the data processing:
+
+```{r reading_in_data, echo=FALSE}
+
+#loading datasets in raw-data folder using terminal, and then using read_dta function for Stata files
+
+stanforddata <- read_dta("raw-data/SEDA_county_long_CS_v21.dta")
+tract_covariates <- read_dta("raw-data/tract_covariates.dta")
+
+#getting a sense of what variables I want to include in my ggplot
+
+view(stanforddata)
+view(tract_covariates)
+```
+
+```{r merging_data, echo=FALSE}
+
+#made the state fips code numeric instead of characters because inner_join doesn't work with characters
+
+#learned that you have to pull the list column out of the dataframe to make it numeric
+
+state_fips <- as.numeric(tract_covariates %>% pull(state))
+
+#looked up add_column to create a new variable with the numeric state FIPS code
+
+tract_edit <- add_column(tract_covariates, state_fips)
+
+#used the same process to change the fips code in the stanforddata dataset to a numeric vector
+
+#called it the same thing to easily inner_join later by a common variable name
+
+state_fips <- as.numeric(stanforddata %>% pull(fips))
+stan_edit <- add_column(stanforddata, state_fips)
+
+#this merged dataset should work, but the message "error: vector memory exhausted (limit reached?)" showed up, figure out why later
+
+#x <- inner_join(tract_edit, stan_edit, by="state_fips")
+
+```
+
+```{r plot, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+
+#creating a filtered tibble with only the data from the state of Massachusetts that does not include NA for the two variables of interest
+
+d <- tract_covariates %>%
+  filter(!is.na(share_white2000)) %>%
+  
+  #filtering out NA values
+  
+  filter(!is.na(hhinc_mean2000)) %>%
+  
+  #found FIPS code for Massachusetts
+  
+  filter(state==25)
+
+#remember to create a new object for ggplot
+
+p<- ggplot(data=d, mapping= aes(x = share_white2000, y=hhinc_mean2000))+
+  
+#I chose geom_point because I wanted a scatterplot of all the datapoints in Massachusetts to compare how the proportions of white people might have a correlation with the mean household income
+  
+  geom_point(alpha=.2)+
+  
+#I used geom_jitter because a lot of the points were too condensed together, so this would allow me to see the individual points more clearly
+  
+  geom_jitter()+
+  
+#this creates a linear model that fits a line to the overall trend.
+  
+  geom_smooth()+
+  
+#I added some captions and titles to the ggplot to make sure I cite everything and make the graph understandable
+  
+  labs(x="Proportion of White People", y="Mean Household Income", title="Share of White People v. Mean Household Income", subtitle="Data from State of Massachusetts in 2000", caption="Source: Opportunity Atlas, https://opportunityinsights.org/data/")
+
+#don't forget to print the output!
+p
