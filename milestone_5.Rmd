@@ -58,7 +58,7 @@ stan_edit <- add_column(stanforddata, state_fips)
 
 #this merged dataset should work, but the message "error: vector memory exhausted (limit reached?)" showed up, figure out why later
 
-#x <- inner_join(tract_edit, stan_edit, by="state_fips")
+x <- inner_join(tract_edit, stan_edit, by="state_fips")
 
 ```
 
