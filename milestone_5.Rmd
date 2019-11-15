@@ -33,8 +33,8 @@ tract_covariates <- read_dta("raw-data/tract_covariates.dta")
 
 #getting a sense of what variables I want to include in my ggplot
 
-view(stanforddata)
-view(tract_covariates)
+#view(stanforddata)
+#view(tract_covariates)
 ```
 
 ```{r merging_data, echo=FALSE}
@@ -43,23 +43,41 @@ view(tract_covariates)
 
 #learned that you have to pull the list column out of the dataframe to make it numeric
 
-state_fips <- as.numeric(tract_covariates %>% pull(state))
+tract_covariates$state_fips <- as.numeric(tract_covariates %>% pull(state))
 
 #looked up add_column to create a new variable with the numeric state FIPS code
 
-tract_edit <- add_column(tract_covariates, state_fips)
+#tract_edit <- add_column(tract_covariates, state_fips)
 
 #used the same process to change the fips code in the stanforddata dataset to a numeric vector
 
 #called it the same thing to easily inner_join later by a common variable name
 
-state_fips <- as.numeric(stanforddata %>% pull(fips))
-stan_edit <- add_column(stanforddata, state_fips)
+stanforddata$state_fips <- as.numeric(stanforddata %>% pull(fips))
+
+# stan_edit <- add_column(stanforddata, state_fips)
 
 #this merged dataset should work, but the message "error: vector memory exhausted (limit reached?)" showed up, figure out why later
 
-x <- inner_join(tract_edit, stan_edit, by="state_fips")
 
+
+# pick variables I need first and then join via full_join
+
+stan_edit <- stanforddata %>% filter(year == 2010) %>% select(mn_all, state_fips)
+tract_edit <- tract_covariates %>% select(hhinc_mean2000, frac_coll_plus2000, foreign_share2010, poor_share2010, singleparent_share2010, nonwhite_share2010, state_fips)
+
+rm(state_fips)
+rm(stanforddata)
+rm(tract_covariates)
+
+
+x <- full_join(tract_edit, stan_edit, by="state_fips")
+
+# how to view large dataset to make sure it merged correctly if can't use view()
+
+# how to find interesting patterns in data and how to know if it's interesting to highlight
+
+write_csv(x)
 ```
 
 ```{r plot, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
